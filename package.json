@@ -18,7 +18,8 @@
     "jade": "^1.11.0",
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",
-    "opentok": "^2.11.0",
+    "@vonage/server-sdk": "^2.12.0-beta.2",
+    "@vonage/video": "^0.7.0",
     "serve-favicon": "~2.5.0",
     "uglify-js": "^3.13.4"
   }

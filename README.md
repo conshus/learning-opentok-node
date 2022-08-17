@@ -1,19 +1,19 @@
-# Simple OpenTok Server App by Node.js
+# Simple Vonage Server App by Node.js
 
 <img src="https://assets.tokbox.com/img/vonage/Vonage_VideoAPI_black.svg" height="48px" alt="Tokbox is now known as Vonage" />
 
-This simple server app shows you how to use [OpenTok Node Server SDK](https://tokbox.com/developer/sdks/node/) to create OpenTok sessions, generate tokens for those sessions, archive (or record) sessions, and download those archives.
+This simple server app shows you how to use [Vonage Node Server SDK](https://tokbox.com/developer/sdks/node/) to create Vonage sessions, generate tokens for those sessions, archive (or record) sessions, and download those archives.
 
 ## Quick deploy to Heroku
 
 Heroku is a PaaS (Platform as a Service) that can be used to deploy simple and small applications for free. To easily deploy this repository to Heroku, sign up for a Heroku account and click this button:
 
-<a href="https://heroku.com/deploy?template=https://github.com/opentok/learning-opentok-node/" target="_blank">
+<a href="https://heroku.com/deploy?template=https://github.com/conshus/learning-opentok-node/" target="_blank">
 <img src="https://www.herokucdn.com/deploy/button.png" alt="Deploy">
 </a>
 
 Heroku will prompt you to add your OpenTok API key and OpenTok API secret, which you can
-obtain at the [TokBox Dashboard](https://dashboard.tokbox.com/keys).
+obtain at the [Vonage Dashboard](https://dashboard.nexmo.com).
 
 ## Requirements
 
