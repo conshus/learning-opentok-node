@@ -2,7 +2,7 @@ doctype html
 html(lang='en')
   head
     meta(charset='utf-8')
-    title Learning OpenTok Node
+    title Learning Vonage Video Node SDK
   style.
     p, td {
     font-family: Arial;
@@ -16,7 +16,7 @@ html(lang='en')
     }
   body
     p
-      | This is a sample web service for use with OpenTok. See the OpenTok 
+      | This is a sample web service for use with Vonage Video Node SDK. See the Vonage
       a(href='https://github.com/opentok/learning-opentok-node')
         | learning-opentok-node
       |  repo on GitHub.
@@ -25,13 +25,13 @@ html(lang='en')
       table
         tr
           td GET /session
-          td Return an OpenTok API key, session ID, and token.
+          td Return an Application ID, session ID, and token.
         tr
           td GET /room/:name 
-          td Return an OpenTok API key, session ID, and token associated with a room name.
+          td Return an Application ID, session ID, and token associated with a room name.
         tr
           td POST /archive/start
-          td Start an archive for the specified OpenTok session.
+          td Start an archive for the specified Vonage Video session.
         tr
           td POST /archive/:archiveId/stop
           td Stop the specified archive.
@@ -44,5 +44,5 @@ html(lang='en')
         tr
           td GET /archive
           td Return a list of archives. 
-            a(href='https://tokbox.com/developer/sdks/node/reference/OpenTok.html#listArchives') More Information
-          td Pagination is enabled by applying either count or offset parameteres.
+            a(href='https://developer.vonage.com/video/guides/archiving/overview') More Information
+          td Optional filter parameters are sessionId, count, and/or offset.

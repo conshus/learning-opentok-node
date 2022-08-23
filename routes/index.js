@@ -15,7 +15,7 @@ if (process.env.VONAGE_PRIVATE_KEY) {
 if (!appId || !privateKey) {
   console.error('=========================================================================================================');
   console.error('');
-  console.error('Missing Vonage Application Id and/or Vonage Private key');
+  console.error('Missing Vonage Application ID and/or Vonage Private key');
   console.error('Find the appropriate values for these by logging into your Vonage Dashboard at: https://dashboard.nexmo.com/applications');
   console.error('Then add them to ', path.resolve('.env'), 'or as environment variables' );
   console.error('');
@@ -74,7 +74,7 @@ router.get('/room/:name', async function (req, res) {
       token: token
     });
   }
-  // if this is the first time the room is being accessed, create a new session Id
+  // if this is the first time the room is being accessed, create a new session ID
   else {
     try {
       const session = await vonage.video.createSession({ mediaMode:"routed" });

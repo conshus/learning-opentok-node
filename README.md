@@ -12,7 +12,7 @@ Heroku is a PaaS (Platform as a Service) that can be used to deploy simple and s
 <img src="https://www.herokucdn.com/deploy/button.png" alt="Deploy">
 </a>
 
-Heroku will prompt you to add your Vonage Application Id and Vonage Private Key, which you can
+Heroku will prompt you to add your Vonage Application ID and Vonage Private Key, which you can
 obtain at the [Vonage Dashboard](https://dashboard.nexmo.com).
 
 ## Requirements
@@ -27,10 +27,10 @@ obtain at the [Vonage Dashboard](https://dashboard.nexmo.com).
 
   2. `cd` to the root directory.
   3. Run `npm install` command to fetch and install all npm dependencies.
-  4. Next, rename the `.envcopy` file located at the root directory to `.env`, and enter in your Vonage App Id and Private Key as indicated:
+  4. Next, rename the `.envcopy` file located at the root directory to `.env`, and enter in your Vonage App ID and Private Key as indicated:
 
       ```
-        # enter your Vonage Application Id after the '=' sign below
+        # enter your Vonage Application ID after the '=' sign below
         VONAGE_APP_ID=your_api_key
         
         # enter your Vonage Private Key as a string or path to the file after the '=' sign below
@@ -41,18 +41,18 @@ obtain at the [Vonage Dashboard](https://dashboard.nexmo.com).
       ```
     
   4. Run `npm start` to start the app.
-  5. Visit the URL <http://localhost:8080/session> in your browser. You should see a JSON response containing the Vonage Application Id, session Id, and token.
+  5. Visit the URL <http://localhost:8080/session> in your browser. You should see a JSON response containing the Vonage Application ID, session Id, and token.
 
 ## Exploring the code 
 
 The `routes/index.js` file is the Express routing for the web service. The rest of this tutorial
 discusses code in this file.
 
-In order to navigate clients to a designated meeting spot, we associate the [Session Id](https://developer.vonage.com/video/overview#sessions) to a room name which is easier for people to recognize and pass. For simplicity, we use a local associated array to implement the association where the room name is the key and the [Session Id](https://developer.vonage.com/video/overview#sessions) is the value. For production applications, you may want to configure a persistence (such as a database) to achieve this functionality.
+In order to navigate clients to a designated meeting spot, we associate the [Session ID](https://developer.vonage.com/video/overview#sessions) to a room name which is easier for people to recognize and pass. For simplicity, we use a local associated array to implement the association where the room name is the key and the [Session ID](https://developer.vonage.com/video/overview#sessions) is the value. For production applications, you may want to configure a persistence (such as a database) to achieve this functionality.
 
-### Generate/Retrieve a Session Id
+### Generate/Retrieve a Session ID
 
-The `GET /room/:name` route associates an OpenTok session with a "room" name. This route handles the passed room name and performs a check to determine whether the app should generate a new session Id or retrieve a session Id from the local in-memory hash. Then, it generates a Vonage Video token for that session Id. Once the Application Id, session Id, and token are ready, it sends a response with the body set to a JSON object containing the information.
+The `GET /room/:name` route associates an OpenTok session with a "room" name. This route handles the passed room name and performs a check to determine whether the app should generate a new session ID or retrieve a session ID from the local in-memory hash. Then, it generates a Vonage Video token for that session ID. Once the Application ID, session ID, and token are ready, it sends a response with the body set to a JSON object containing the information.
 
 ```javascript
 if (roomToSessionIdDictionary[roomName]) {
@@ -67,7 +67,7 @@ if (roomToSessionIdDictionary[roomName]) {
         token: token
     });
 }
-// if this is the first time the room is being accessed, create a new session Id
+// if this is the first time the room is being accessed, create a new session ID
 else {
     try {
         const session = await vonage.video.createSession({ mediaMode:"routed" });
@@ -104,7 +104,7 @@ router.get('/session', function(req, res, next) {
 ### Start an [Archive](https://developer.vonage.com/video/guides/archiving/overview)
 
 A `POST` request to the `/archive/start` route starts an archive recording of a Vonage Video session.
-The session Id is passed in as JSON data in the body of the request
+The session ID is passed in as JSON data in the body of the request
 
 ```javascript
 router.post('/archive/start', async function (req, res) {
@@ -129,7 +129,7 @@ the app will respond with an error.
 ### Stop an Archive
 
 A `POST` request to the `/archive/:archiveId/stop` route stops an archive's recording.
-The archive Id is returned by the call to the `archive/start` endpoint.
+The archive ID is returned by the call to the `archive/start` endpoint.
 
 ```javascript
 router.post('/archive/:archiveId/stop', async function (req, res) {
@@ -197,7 +197,7 @@ A `GET` request to `/archive` with optional `sessionId`, `count` and `offset` pa
 Examples:
 ```javascript
 GET /archive // fetch up to 1000 archive objects
-GET /archive?sessionId=1_MX42...xQVJmfn4 // fetch archive(s) with session Id
+GET /archive?sessionId=1_MX42...xQVJmfn4 // fetch archive(s) with session ID
 GET /archive?count=10  // fetch the first 10 archive objects
 GET /archive?offset=10  // fetch archives but first 10 archive objetcs
 GET /archive?count=10&offset=10 // fetch 10 archive objects starting from 11th
