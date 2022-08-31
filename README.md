@@ -1,4 +1,4 @@
-# Simple Vonage Video NodeJS Server App
+# Sample Vonage Video NodeJS Server App
 
 <img src="https://assets.tokbox.com/img/vonage/Vonage_VideoAPI_black.svg" height="48px" alt="Tokbox is now known as Vonage" />
 
@@ -8,7 +8,7 @@ This simple server app shows you how to use [Vonage Video Node Server SDK](https
 
 Heroku is a PaaS (Platform as a Service) that can be used to deploy simple and small applications for free. To easily deploy this repository to Heroku, sign up for a Heroku account and click this button:
 
-<a href="https://heroku.com/deploy?template=https://github.com/conshus/learning-opentok-node/" target="_blank">
+<a href="https://heroku.com/deploy?template=https://github.com/Vonage-Community/sample-video-node-learning_server/" target="_blank">
 <img src="https://www.herokucdn.com/deploy/button.png" alt="Deploy">
 </a>
 
@@ -22,8 +22,8 @@ obtain at the [Vonage Dashboard](https://dashboard.nexmo.com).
 ## Installing & Running on localhost
 
   1. Clone the app by running the command
-  
-		  git clone git@github.com:opentok/learning-opentok-node.git
+
+		  git clone git@github.com:Vonage-Community/sample-video-node-learning_server.git
 
   2. `cd` to the root directory.
   3. Run `npm install` command to fetch and install all npm dependencies.
