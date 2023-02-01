@@ -3,11 +3,13 @@ const router = express.Router();
 const path = require('path');
 const _ = require('lodash');
 
-const appId = process.env.VONAGE_APP_ID;
+const appId = process.env.API_APPLICATION_ID;
 let privateKey;
 
-if (process.env.VONAGE_PRIVATE_KEY) {
-  privateKey = process.env.VONAGE_PRIVATE_KEY
+console.log("process.env: ", process.env)
+
+if (process.env.PRIVATE_KEY) {
+  privateKey = process.env.PRIVATE_KEY
 } else if (process.env.VONAGE_PRIVATE_KEY64){
   privateKey = Buffer.from(process.env.VONAGE_PRIVATE_KEY64, 'base64');
 }
@@ -44,6 +46,12 @@ function findRoomFromSessionId(sessionId) {
 router.get('/', function (req, res) {
   res.render('index', { title: 'Learning-Vonage-Node' });
 });
+
+
+router.get('/_/health', function (req, res) {
+  res.status(200);
+});
+
 
 /**
  * GET /session redirects to /room/session

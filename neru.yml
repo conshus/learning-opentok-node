@@ -1,0 +1,11 @@
+project:
+    name: learning-opentok-node
+instance:
+    name: dev
+    runtime: nodejs16
+    region: aws.use1
+    application-id: af62b2c1-020a-4c6a-b5c3-62d3e05f0783
+    entrypoint: [npm, start]
+debug:
+    name: debug
+    entrypoint: [npm, start]
