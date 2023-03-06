@@ -1,35 +1,48 @@
-var express = require('express');
-var router = express.Router();
-var path = require('path');
-var _ = require('lodash');
+const express = require('express');
+// eslint-disable-next-line new-cap
+const router = express.Router();
+const path = require('path');
+const axios = require('axios');
+const { projectToken } = require('opentok-jwt');
+const _ = require('lodash');
+const bodyParser = require('body-parser');
 
-var apiKey = process.env.TOKBOX_API_KEY;
-var secret = process.env.TOKBOX_SECRET;
+const apiKey = process.env.TOKBOX_API_KEY;
+const secret = process.env.TOKBOX_SECRET;
+
+const captionsUrl = 'https://api.opentok.com/v2/project';
+
+const postBodyParser = bodyParser.json();
+bodyParser.raw();
 
 if (!apiKey || !secret) {
-  console.error('=========================================================================================================');
+  console.error('='.repeat('80'));
   console.error('');
   console.error('Missing TOKBOX_API_KEY or TOKBOX_SECRET');
-  console.error('Find the appropriate values for these by logging into your TokBox Dashboard at: https://tokbox.com/account/#/');
-  console.error('Then add them to ', path.resolve('.env'), 'or as environment variables' );
+  console.error(
+    'Find the appropriate values for these by logging into your TokBox Dashboard at: https://tokbox.com/account/#/',
+  );
+  console.error('Then add them to ', path.resolve('.env'), 'or as environment variables');
   console.error('');
-  console.error('=========================================================================================================');
+  console.error('='.repeat('80'));
   process.exit();
 }
 
-var OpenTok = require('opentok');
-var opentok = new OpenTok(apiKey, secret);
+const OpenTok = require('opentok');
+const opentok = new OpenTok(apiKey, secret);
 
 // IMPORTANT: roomToSessionIdDictionary is a variable that associates room names with unique
 // unique session IDs. However, since this is stored in memory, restarting your server will
 // reset these values if you want to have a room-to-session association in your production
 // application you should consider a more persistent storage
 
-var roomToSessionIdDictionary = {};
+const roomToSessionIdDictionary = {};
 
 // returns the room name, given a session ID that was associated with it
 function findRoomFromSessionId(sessionId) {
-  return _.findKey(roomToSessionIdDictionary, function (value) { return value === sessionId; });
+  return _.findKey(roomToSessionIdDictionary, function (value) {
+    return value === sessionId;
+  });
 }
 
 router.get('/', function (req, res) {
@@ -47,9 +60,14 @@ router.get('/session', function (req, res) {
  * GET /room/:name
  */
 router.get('/room/:name', function (req, res) {
-  var roomName = req.params.name;
-  var sessionId;
-  var token;
+  const roomName = req.params.name;
+  let sessionId;
+  let token;
+
+  const tokenOptions = {};
+  // we need caption to be moderator role for captions to work
+  tokenOptions.role = "moderator";
+
   console.log('attempting to create a session associated with the room: ' + roomName);
 
   // if the room name is associated with a session ID, fetch that
@@ -57,12 +75,12 @@ router.get('/room/:name', function (req, res) {
     sessionId = roomToSessionIdDictionary[roomName];
 
     // generate token
-    token = opentok.generateToken(sessionId);
+    token = opentok.generateToken(sessionId, tokenOptions);
     res.setHeader('Content-Type', 'application/json');
     res.send({
       apiKey: apiKey,
       sessionId: sessionId,
-      token: token
+      token: token,
     });
   }
   // if this is the first time the room is being accessed, create a new session ID
@@ -81,14 +99,75 @@ router.get('/room/:name', function (req, res) {
       roomToSessionIdDictionary[roomName] = session.sessionId;
 
       // generate token
-      token = opentok.generateToken(session.sessionId);
+      token = opentok.generateToken(session.sessionId, tokenOptions);
       res.setHeader('Content-Type', 'application/json');
       res.send({
         apiKey: apiKey,
         sessionId: session.sessionId,
-        token: token
+        token: token,
       });
     });
+  }
+});
+
+/**
+ * POST /captions/start
+ */
+router.post('/captions/start', async function (req, res) {
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+  const captionURL = `${captionsUrl}/${apiKey}/captions`;
+
+  const captionPostBody = {
+    sessionId: req.body.sessionId,
+    token: req.body.token,
+    languageCode: 'en-US',
+    maxDuration: 36000,
+    partialCaptions: 'true',
+  };
+
+  try {
+    const captionResponse = await axios.post(captionURL, captionPostBody, {
+      headers: {
+        'X-OPENTOK-AUTH': projectJWT,
+        'Content-Type': 'application/json',
+      },
+    });
+    res.send(captionResponse.data.captionsId);
+  } catch (err) {
+    console.warn(err);
+    res.status(500);
+    res.send(`Error starting transcription services: ${err}`);
+    return;
+  }
+});
+
+/**
+ * POST /captions/stop
+ */
+router.post('/captions/stop', postBodyParser, async function (req, res) {
+  const captionsId = req.body.captionId;
+
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+
+  const captionURL = `${captionsUrl}/${apiKey}/captions/${captionsId}/stop`;
+
+  try {
+    const captionResponse = await axios.post(captionURL, {}, {
+      headers: {
+        'X-OPENTOK-AUTH': projectJWT,
+        'Content-Type': 'application/json',
+      },
+    });
+    res.sendStatus(captionResponse.status);
+  } catch (err) {
+    console.warn(err);
+    res.status(500);
+    res.send(`Error stopping transcription services: ${err}`);
+    return;
   }
 });
 
@@ -96,8 +175,8 @@ router.get('/room/:name', function (req, res) {
  * POST /archive/start
  */
 router.post('/archive/start', function (req, res) {
-  var json = req.body;
-  var sessionId = json.sessionId;
+  const json = req.body;
+  const sessionId = json.sessionId;
   opentok.startArchive(sessionId, { name: findRoomFromSessionId(sessionId) }, function (err, archive) {
     if (err) {
       console.error('error in startArchive');
@@ -114,7 +193,7 @@ router.post('/archive/start', function (req, res) {
  * POST /archive/:archiveId/stop
  */
 router.post('/archive/:archiveId/stop', function (req, res) {
-  var archiveId = req.params.archiveId;
+  const archiveId = req.params.archiveId;
   console.log('attempting to stop archive: ' + archiveId);
   opentok.stopArchive(archiveId, function (err, archive) {
     if (err) {
@@ -132,7 +211,7 @@ router.post('/archive/:archiveId/stop', function (req, res) {
  * GET /archive/:archiveId/view
  */
 router.get('/archive/:archiveId/view', function (req, res) {
-  var archiveId = req.params.archiveId;
+  const archiveId = req.params.archiveId;
   console.log('attempting to view archive: ' + archiveId);
   opentok.getArchive(archiveId, function (err, archive) {
     if (err) {
@@ -154,7 +233,7 @@ router.get('/archive/:archiveId/view', function (req, res) {
  * GET /archive/:archiveId
  */
 router.get('/archive/:archiveId', function (req, res) {
-  var archiveId = req.params.archiveId;
+  const archiveId = req.params.archiveId;
 
   // fetch archive
   console.log('attempting to fetch archive: ' + archiveId);
@@ -176,7 +255,7 @@ router.get('/archive/:archiveId', function (req, res) {
  * GET /archive
  */
 router.get('/archive', function (req, res) {
-  var options = {};
+  const options = {};
   if (req.query.count) {
     options.count = req.query.count;
   }
