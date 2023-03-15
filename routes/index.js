@@ -10,7 +10,7 @@ const bodyParser = require('body-parser');
 const apiKey = process.env.TOKBOX_API_KEY;
 const secret = process.env.TOKBOX_SECRET;
 
-const captionsUrl = 'https://api.opentok.com/v2/project';
+const opentokUrl = 'https://api.opentok.com/v2/project';
 
 const postBodyParser = bodyParser.json();
 bodyParser.raw();
@@ -31,12 +31,19 @@ if (!apiKey || !secret) {
 const OpenTok = require('opentok');
 const opentok = new OpenTok(apiKey, secret);
 
-// IMPORTANT: roomToSessionIdDictionary is a variable that associates room names with unique
+// IMPORTANT: roomToSessionIdDictionary is a variable that associates room names with
 // unique session IDs. However, since this is stored in memory, restarting your server will
-// reset these values if you want to have a room-to-session association in your production
+// reset these values. If you want to have a room-to-session association in your production
 // application you should consider a more persistent storage
 
 const roomToSessionIdDictionary = {};
+
+// IMPORTANT: sessionIdToCaptionsIdDictionary is a variable that associates session IDs with
+// unique caption IDs. However, since this is stored in memory, restarting your server will
+// reset these values. If you want to have a session-to-captions association in your production
+// application you should consider a more persistent storage
+
+const sessionIdToCaptionsIdDictionary = {}; 
 
 // returns the room name, given a session ID that was associated with it
 function findRoomFromSessionId(sessionId) {
@@ -110,17 +117,20 @@ router.get('/room/:name', function (req, res) {
   }
 });
 
-/**
- * POST /captions/start
- */
-router.post('/captions/start', async function (req, res) {
+router.post('/captions/start', async (req, res) => {
+  const sessionId = req.body.sessionId;
+  if (sessionIdToCaptionsIdDictionary[sessionId]) {
+    res.send(`Captions are already enabled for: ${sessionId}`);
+    return;
+  }
+
   // With custom expiry (Default 30 days)
   const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
   const projectJWT = projectToken(apiKey, secret, expires);
-  const captionURL = `${captionsUrl}/${apiKey}/captions`;
+  const captionURL = `${opentokUrl}/${apiKey}/captions`;
 
   const captionPostBody = {
-    sessionId: req.body.sessionId,
+    sessionId,
     token: req.body.token,
     languageCode: 'en-US',
     maxDuration: 36000,
@@ -134,7 +144,14 @@ router.post('/captions/start', async function (req, res) {
         'Content-Type': 'application/json',
       },
     });
-    res.send(captionResponse.data.captionsId);
+
+    const captionsId = captionResponse.data.captionsId;
+
+    // IMPORTANT: Because this is stored in memory, restarting your server will reset these values
+    // if you want to store a session-to-captions association in your production application
+    // you should use a more persistent storage for them
+    sessionIdToCaptionsIdDictionary[sessionId] = captionsId;
+    res.send(captionsId);
   } catch (err) {
     console.warn(err);
     res.status(500);
@@ -143,17 +160,21 @@ router.post('/captions/start', async function (req, res) {
   }
 });
 
-/**
- * POST /captions/stop
- */
-router.post('/captions/stop', postBodyParser, async function (req, res) {
-  const captionsId = req.body.captionId;
+router.post('/captions/stop', postBodyParser, async (req, res) => {
+  const sessionId = req.body.sessionId;
+  const captionsId = sessionIdToCaptionsIdDictionary[sessionId];
+
+  if (captionsId === undefined) {
+    res.status(500);
+    res.send(`Captions are not enabled for: ${sessionId}`);
+    return;
+  }
 
   // With custom expiry (Default 30 days)
   const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
   const projectJWT = projectToken(apiKey, secret, expires);
 
-  const captionURL = `${captionsUrl}/${apiKey}/captions/${captionsId}/stop`;
+  const captionURL = `${opentokUrl}/${apiKey}/captions/${captionsId}/stop`;
 
   try {
     const captionResponse = await axios.post(captionURL, {}, {
@@ -163,6 +184,7 @@ router.post('/captions/stop', postBodyParser, async function (req, res) {
       },
     });
     res.sendStatus(captionResponse.status);
+    delete sessionIdToCaptionsIdDictionary[sessionId];
   } catch (err) {
     console.warn(err);
     res.status(500);
@@ -277,6 +299,111 @@ router.get('/archive', function (req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.send(archives);
   });
+});
+
+router.post('/render', async (req, res) => {
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+  const renderURL = `${opentokUrl}/${apiKey}/render`;
+
+  const renderPostBody = {
+    sessionId: req.body.sessionId,
+    token: req.body.token,
+    "url": "https://www.google.com",
+    maxDuration: 36000,
+    "resolution": "1280x720",
+    "properties": {
+      name: "Composed stream for Live event",
+    },
+  };
+  try {
+    const renderResponse = await axios.post(renderURL, renderPostBody, {
+      headers: {
+        'X-OPENTOK-AUTH': projectJWT,
+        'Content-Type': 'application/json',
+      },
+    });
+    res.send(renderResponse.data.id);
+  } catch (err) {
+    console.warn(err);
+    res.status(500);
+    res.send(`Error starting Experience Composer: ${err}`);
+    return;
+  }
+});
+
+router.get('/render/info', async (req, res) => {
+  const renderId = req.body.id;
+
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+
+  const renderURL = `${opentokUrl}/${apiKey}/render/${renderId}`;
+
+  try {
+    const renderResponse = await axios.get(renderURL, {
+      headers: {
+        'X-OPENTOK-AUTH': projectJWT,
+        'Content-Type': 'application/json',
+      },
+    }, {});
+    res.sendStatus(renderResponse.status);
+  } catch (err) {
+    console.warn(err);
+    res.status(err.status);
+    res.send(`Error retrieving composer information: ${err}`);
+    return;
+  }
+});
+
+router.get('/render/list', async (req, res) => {
+  const count = req.body.count;
+
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+
+  const renderURL = `${opentokUrl}/${apiKey}/render?count=${count}`;
+
+  try {
+    const renderResponse = await axios.get(renderURL, {
+      headers: {
+        'X-OPENTOK-AUTH': projectJWT,
+        'Content-Type': 'application/json',
+      },
+    }, {});
+    res.sendStatus(renderResponse.status);
+  } catch (err) {
+    console.warn(err);
+    res.status(err.response.status);
+    res.send(`Error retrieving composer information: ${err}`);
+    return;
+  }
+});
+
+router.delete('/render/stop', postBodyParser, async (req, res) => {
+  const renderId = req.body.id;
+
+  // With custom expiry (Default 30 days)
+  const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
+  const projectJWT = projectToken(apiKey, secret, expires);
+  const renderURL = `${opentokUrl}/${apiKey}/render/${renderId}/`;
+  try {
+    const renderResponse = await axios.delete(renderURL, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-OPENTOK-AUTH': projectJWT,
+      },
+    }, {});
+    res.sendStatus(renderResponse.status);
+  } catch (err) {
+    console.warn(err);
+    res.status(err.response.status);
+    res.send(`Error stopping the composer: ${err}`);
+    return;
+  }
 });
 
 module.exports = router;
