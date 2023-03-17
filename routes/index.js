@@ -138,8 +138,7 @@ router.post('/captions/start', async (req, res) => {
     res.send({ id: captionsId });
   } catch (err) {
     console.warn(err);
-    res.status(500);
-    res.send({ error: `Error starting transcription services: ${err}` });
+    res.status(500).send({ error: `Error starting transcription services: ${err}` });
     return;
   }
 });
@@ -163,8 +162,7 @@ router.post('/captions/:captionsId/stop', postBodyParser, async (req, res) => {
     res.sendStatus(captionResponse.status);
   } catch (err) {
     console.warn(err);
-    res.status(500);
-    res.send({ error: `Error stopping transcription services: ${err}` });
+    res.status(500).send({ error: `Error stopping transcription services: ${err}` });
     return;
   }
 });
