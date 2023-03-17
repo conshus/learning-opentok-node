@@ -159,7 +159,7 @@ router.post('/captions/:captionsId/stop', postBodyParser, async (req, res) => {
         'Content-Type': 'application/json',
       },
     });
-    res.sendStatus(captionResponse.status);
+    res.sendStatus({ status: captionResponse.status });
   } catch (err) {
     console.warn(err);
     res.status(500).send({ error: `Error stopping transcription services: ${err}` });
