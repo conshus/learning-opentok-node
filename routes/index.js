@@ -138,14 +138,15 @@ router.post('/captions/start', async (req, res) => {
     res.send({ id: captionsId });
   } catch (err) {
     console.warn(err);
-    res.status(500).send({ error: `Error starting transcription services: ${err}` });
+    res.status(500);
+    res.send(`Error starting transcription services: ${err}`);
     return;
   }
 });
 
 router.post('/captions/:captionsId/stop', postBodyParser, async (req, res) => {
   const captionsId = req.params.captionsId;
-  
+
   // With custom expiry (Default 30 days)
   const expires = Math.floor(new Date() / 1000) + (24 * 60 * 60);
   const projectJWT = projectToken(apiKey, secret, expires);
@@ -159,10 +160,11 @@ router.post('/captions/:captionsId/stop', postBodyParser, async (req, res) => {
         'Content-Type': 'application/json',
       },
     });
-    res.sendStatus({ status: captionResponse.status });
+    res.sendStatus(captionResponse.status);
   } catch (err) {
     console.warn(err);
-    res.status(500).send({ error: `Error stopping transcription services: ${err}` });
+    res.status(500);
+    res.send(`Error stopping transcription services: ${err}`);
     return;
   }
 });
